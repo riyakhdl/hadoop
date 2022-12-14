@@ -443,7 +443,7 @@ public class RMAppAttemptBlock extends AppAttemptBlock{
       DIV<Hamlet> pdiv = html.__(InfoBlock.class).div(_INFO_WRAP);
       info("Application Attempt Overview").clear();
       info("Application Attempt Metrics").__(
-          "Application Attempt Headroom : ", metrics == null ? "N/A" :
+        "Application Attempt Headroom : ", metrics == null ? "N/A" :
           metrics.getApplicationAttemptHeadroom());
       pdiv.__();
     }
