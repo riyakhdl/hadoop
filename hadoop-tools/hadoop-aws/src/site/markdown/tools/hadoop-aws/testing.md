@@ -379,6 +379,19 @@ This adds extra overhead to every operation, but helps verify that the connector
 not keeping markers where it needs to be deleting them -and hence backwards compatibility
 is maintained.
 
+## <a name="enabling-prefetch"></a> Enabling prefetch for all tests
+
+The tests are run with prefetch if the `prefetch` property is set in the
+maven build. This can be combined with the scale tests as well.
+
+```bash
+mvn verify -Dprefetch
+
+mvn verify -Dparallel-tests -Dprefetch -DtestsThreadCount=8
+
+mvn verify -Dparallel-tests -Dprefetch -Dscale -DtestsThreadCount=8
+```
+
 ## <a name="scale"></a> Scale Tests
 
 There are a set of tests designed to measure the scalability and performance
@@ -521,7 +534,7 @@ Otherwise, set a large timeout in `fs.s3a.scale.test.timeout`
 The tests are executed in an order to only clean up created files after
 the end of all the tests. If the tests are interrupted, the test data will remain.
 
-## <a name="alternate_s3"></a> Load tests.
+## <a name="load"></a> Load tests.
 
 Some are designed to overload AWS services with more
 requests per second than an AWS account is permitted.
@@ -546,6 +559,32 @@ to it. We encourage testing against other filesystems and submissions of patches
 which address issues. In particular, we encourage testing of Hadoop release
 candidates, as these third-party endpoints get even less testing than the
 S3 endpoint itself.
+
+The core XML settings to turn off tests of features unavailable
+on third party stores.
+
+```xml
+  <property>
+    <name>test.fs.s3a.encryption.enabled</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>test.fs.s3a.create.storage.class.enabled</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>fs.s3a.select.enabled</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>test.fs.s3a.sts.enabled</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>test.fs.s3a.create.create.acl.enabled</name>
+    <value>false</value>
+ < /property>
+```
 
 ### Public datasets used in tests
 
@@ -587,7 +626,7 @@ S3 storage class, these tests might fail. They can be disabled.
 </property>
 ```
 
-### Configuring the CSV file read tests**
+### Configuring the CSV file read tests
 
 To test on alternate infrastructures supporting
 the same APIs, the option `fs.s3a.scale.test.csvfile` must either be
@@ -620,18 +659,19 @@ your `core-site.xml` file, so that trying to use S3 select fails fast with
 a meaningful error ("S3 Select not supported") rather than a generic Bad Request
 exception.
 
-### <a name="enabling-prefetch"></a> Enabling prefetch for all tests
+### Disabling V1 List API tests
 
-The tests are run with prefetch if the `prefetch` property is set in the
-maven build. This can be combined with the scale tests as well.
 
-```bash
-mvn verify -Dprefetch
-
-mvn verify -Dparallel-tests -Dprefetch -DtestsThreadCount=8
-
-mvn verify -Dparallel-tests -Dprefetch -Dscale -DtestsThreadCount=8
+If `ITestS3AContractGetFileStatusV1List` fails with any error about unsupported API.
+```xml
+  <property>
+    <name>test.fs.s3a.list.v1.enabled</name>
+    <value>false</value>
+  </property>
 ```
+
+Note: there's no equivalent for turning off v2 listing API, which all stores are now
+expected to support.
 
 
 ### Testing Requester Pays
@@ -698,6 +738,20 @@ The default is ""; meaning "use the amazon default endpoint" (`sts.amazonaws.com
 
 Consult the [AWS documentation](https://docs.aws.amazon.com/general/latest/gr/rande.html#sts_region)
 for the full list of locations.
+
+### Disabling Content Encoding tests
+
+Tests in `ITestS3AContentEncoding` may need disabling
+```xml
+  <property>
+    <name>test.fs.s3a.content.encoding.enabled</name>
+    <value>false</value>
+  </property>
+```
+### Tests which may fail (and which you can ignore)
+
+* `ITestS3AContractMultipartUploader` tests `testMultipartUploadAbort` and `testSingleUpload` raising `FileNotFoundException`
+* `ITestS3AMiscOperations.testEmptyFileChecksums`: if the FS encrypts data always.
 
 ## <a name="debugging"></a> Debugging Test failures
 
@@ -945,7 +999,7 @@ sequential one afterwards. The IO heavy ones must also be subclasses of
 `S3AScaleTestBase` and so only run if the system/maven property
 `fs.s3a.scale.test.enabled` is true.
 
-## Individual test cases can be run in an IDE
+### Individual test cases can be run in an IDE
 
 This is invaluable for debugging test failures.
 
@@ -1004,71 +1058,19 @@ using an absolute XInclude reference to it.
 
 ## <a name="failure-injection"></a>Failure Injection
 
-**Warning do not enable any type of failure injection in production.  The
-following settings are for testing only.**
-
-One of the challenges with S3A integration tests was the fact that S3 was an
-eventually-consistent storage system. To simulate inconsistencies more
-frequently than they would normally surface, S3A supports a shim layer on top of the `AmazonS3Client`
-class which artificially delays certain paths from appearing in listings.
-This is implemented in the class `InconsistentAmazonS3Client`.
-
-Now that S3 is consistent, injecting inconsistency is no longer needed
-during testing.
-However, it is stil useful to use the other feature of the client:
-throttling simulation.
-
-## Simulating List Inconsistencies
-
-### Enabling the InconsistentAmazonS3CClient
+S3A provides an "Inconsistent S3 Client Factory" that can be used to
+simulate throttling by injecting random failures on S3 client requests.
 
 
-To enable the fault-injecting client via configuration, switch the
-S3A client to use the "Inconsistent S3 Client Factory" when connecting to
-S3:
+**Note**
 
-```xml
-<property>
-  <name>fs.s3a.s3.client.factory.impl</name>
-  <value>org.apache.hadoop.fs.s3a.InconsistentS3ClientFactory</value>
-</property>
-```
-
-The inconsistent client will, on every AWS SDK request,
-generate a random number, and if less than the probability,
-raise a 503 exception.
-
-```xml
-
-<property>
-  <name>fs.s3a.failinject.throttle.probability</name>
-  <value>0.05</value>
-</property>
-```
-
-These exceptions are returned to S3; they do not test the
-AWS SDK retry logic.
+In previous releases, this factory could also be used to simulate
+inconsistencies during testing of S3Guard. Now that S3 is consistent,
+injecting inconsistency is no longer needed during testing.
 
 
-### Using the `InconsistentAmazonS3CClient` in downstream integration tests
 
-The inconsistent client is shipped in the `hadoop-aws` JAR, so it can
-be used in integration tests.
-
-## <a name="s3guard"></a> Testing S3Guard
-
-As part of the removal of S3Guard from the production code, the tests have been updated
-so that
-
-* All S3Guard-specific tests have been deleted.
-* All tests parameterized on S3Guard settings have had those test configurations removed.
-* The maven profiles option to run tests with S3Guard have been removed.
-
-There is no need to test S3Guard -and so tests are lot faster.
-(We developers are all happy)
-
-
-##<a name="assumed_roles"></a> Testing Assumed Roles
+## <a name="assumed_roles"></a> Testing Assumed Roles
 
 Tests for the AWS Assumed Role credential provider require an assumed
 role to request.
@@ -1085,7 +1087,7 @@ The specific tests an Assumed Role ARN is required for are
 To run these tests you need:
 
 1. A role in your AWS account will full read and write access rights to
-the S3 bucket used in the tests, and KMS for any SSE-KMS tests.
+the S3 bucket used in the tests, and KMS for any SSE-KMS or DSSE-KMS tests.
 
 
 1. Your IAM User to have the permissions to "assume" that role.
@@ -1140,7 +1142,7 @@ as it may take a couple of SDK updates before it is ready.
 1. Identify the latest AWS SDK [available for download](https://aws.amazon.com/sdk-for-java/).
 1. Create a private git branch of trunk for JIRA, and in
   `hadoop-project/pom.xml` update the `aws-java-sdk.version` to the new SDK version.
-1. Update AWS SDK versions in NOTICE.txt.
+1. Update AWS SDK versions in NOTICE.txt and LICENSE.binary
 1. Do a clean build and rerun all the `hadoop-aws` tests.
   This includes the `-Pscale` set, with a role defined for the assumed role tests.
   in `fs.s3a.assumed.role.arn` for testing assumed roles,
@@ -1162,11 +1164,18 @@ your IDE or via maven.
   `mvn dependency:tree -Dverbose > target/dependencies.txt`.
   Examine the `target/dependencies.txt` file to verify that no new
   artifacts have unintentionally been declared as dependencies
-  of the shaded `aws-java-sdk-bundle` artifact.
+  of the shaded `software.amazon.awssdk:bundle:jar` artifact.
 1. Run a full AWS-test suite with S3 client-side encryption enabled by
  setting `fs.s3a.encryption.algorithm` to 'CSE-KMS' and setting up AWS-KMS
   Key ID in `fs.s3a.encryption.key`.
 
+The dependency chain of the `hadoop-aws` module should be similar to this, albeit
+with different version numbers:
+```
+[INFO] +- org.apache.hadoop:hadoop-aws:jar:3.4.0-SNAPSHOT:compile
+[INFO] |  +- software.amazon.awssdk:bundle:jar:2.23.5:compile
+[INFO] |  \- org.wildfly.openssl:wildfly-openssl:jar:1.1.3.Final:compile
+```
 ### Basic command line regression testing
 
 We need a run through of the CLI to see if there have been changes there
@@ -1289,9 +1298,12 @@ time bin/hadoop fs -copyToLocal -t 10  $BUCKET/\*aws\* tmp
 
 # ---------------------------------------------------
 # S3 Select on Landsat
+# this will fail with a ClassNotFoundException unless
+# eventstore JAR is added to the classpath
 # ---------------------------------------------------
 
 export LANDSATGZ=s3a://landsat-pds/scene_list.gz
+
 
 bin/hadoop s3guard select -header use -compression gzip $LANDSATGZ \
  "SELECT s.entityId,s.cloudCover FROM S3OBJECT s WHERE s.cloudCover < '0.0' LIMIT 100"
@@ -1360,5 +1372,5 @@ Don't be surprised if this happens, don't worry too much, and,
 while that rollback option is there to be used, ideally try to work forwards.
 
 If the problem is with the SDK, file issues with the
- [AWS SDK Bug tracker](https://github.com/aws/aws-sdk-java/issues).
+ [AWS V2 SDK Bug tracker](https://github.com/aws/aws-sdk-java-v2/issues).
 If the problem can be fixed or worked around in the Hadoop code, do it there too.

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import org.apache.hadoop.conf.Configuration;
@@ -43,8 +44,10 @@ import static org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.C
 import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.assertJsonResponse;
 import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.assertJsonType;
 import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.assertXmlResponse;
+import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.backupSchedulerConfigFileInTarget;
 import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.createRM;
 import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.createWebAppDescriptor;
+import static org.apache.hadoop.yarn.server.resourcemanager.webapp.TestWebServiceUtil.restoreSchedulerConfigFileInTarget;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -60,6 +63,12 @@ public class TestRMWebServicesCapacitySched extends JerseyTestBase {
   public TestRMWebServicesCapacitySched(boolean legacyQueueMode) {
     super(createWebAppDescriptor());
     this.legacyQueueMode = legacyQueueMode;
+    backupSchedulerConfigFileInTarget();
+  }
+
+  @AfterClass
+  public static void afterClass() {
+    restoreSchedulerConfigFileInTarget();
   }
 
   @Test
@@ -150,6 +159,7 @@ public class TestRMWebServicesCapacitySched extends JerseyTestBase {
     conf.set("yarn.scheduler.capacity.legacy-queue-mode.enabled", String.valueOf(legacyQueueMode));
     conf.set("yarn.scheduler.capacity.root.queues", "a, b, c");
     conf.set("yarn.scheduler.capacity.root.a.capacity", "12.5");
+    conf.set("yarn.scheduler.capacity.root.a.accessible-node-labels", "root-a-default-label");
     conf.set("yarn.scheduler.capacity.root.a.maximum-capacity", "50");
     conf.set("yarn.scheduler.capacity.root.a.max-parallel-app", "42");
     conf.set("yarn.scheduler.capacity.root.b.capacity", "50");

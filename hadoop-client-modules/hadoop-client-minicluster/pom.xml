@@ -18,11 +18,11 @@
   <parent>
     <groupId>org.apache.hadoop</groupId>
     <artifactId>hadoop-project</artifactId>
-    <version>3.4.0-SNAPSHOT</version>
+    <version>3.5.0-SNAPSHOT</version>
     <relativePath>../../hadoop-project</relativePath>
   </parent>
   <artifactId>hadoop-client-minicluster</artifactId>
-  <version>3.4.0-SNAPSHOT</version>
+  <version>3.5.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <description>Apache Hadoop Minicluster for Clients</description>
@@ -443,6 +443,10 @@
           <groupId>javax.xml.bind</groupId>
           <artifactId>jaxb-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jettison</groupId>
+          <artifactId>jettison</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -744,15 +748,10 @@
                       </excludes>
                     </filter>
                     <filter>
-                      <artifact>com.fasterxml.jackson.*:*</artifact>
-                      <excludes>
-                        <exclude>META-INF/versions/11/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                    <filter>
-                      <artifact>com.google.code.gson:gson</artifact>
+                      <artifact>*:*</artifact>
                       <excludes>
                         <exclude>META-INF/versions/9/module-info.class</exclude>
+                        <exclude>META-INF/versions/11/module-info.class</exclude>
                       </excludes>
                     </filter>
 
