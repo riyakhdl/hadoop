@@ -1609,7 +1609,7 @@
 
 <property>
   <name>fs.s3a.connection.establish.timeout</name>
-  <value>5s</value>
+  <value>30s</value>
   <description>Socket connection setup timeout in milliseconds; this will be retried
     more than once.</description>
 </property>
@@ -2094,20 +2094,6 @@
   <description>
     Select which version of the S3 SDK's List Objects API to use.  Currently
     support 2 (default) and 1 (older API).
-  </description>
-</property>
-
-<property>
-  <name>fs.s3a.connection.request.timeout</name>
-  <value>0s</value>
-  <description>
-    Time out on HTTP requests to the AWS service; 0 means no timeout.
-
-    Important: this is the maximum duration of any AWS service call,
-    including upload and copy operations. If non-zero, it must be larger
-    than the time to upload multi-megabyte blocks to S3 from the client,
-    and to rename many-GB files. Use with care.
-
   </description>
 </property>
 
