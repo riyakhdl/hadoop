@@ -83,7 +83,7 @@ public class JQueryUI extends HtmlBlock {
 //    list.add("var appsTableData = []");
 //    list.add("(var appsTableData !== undefined) ? appsTableData : [];")
     initAccordions(list);
-    initDataTables(list);
+  // initDataTables(list);
 //    initDialogs(list);
 //    initProgressBars(list);
 
@@ -93,6 +93,9 @@ public class JQueryUI extends HtmlBlock {
 //    }
     html.script().$type("text/javascript")
             .__(list.toArray()).__();
+    html.div().__("").__();
+    html.script().$type("text/javascript")
+      .__(initDataTables()).__();
   }
 
 
@@ -217,7 +220,7 @@ public class JQueryUI extends HtmlBlock {
 //    }
 //  }
 
-  protected void initDataTables(List<String> list) {
+  protected String initDataTables() {
     String defaultInit = "{sPaginationType: 'full_numbers'}";
     String stateSaveInit = "bStateSave : true, " +
             "\"fnStateSave\": function (oSettings, oData) { " +
@@ -228,7 +231,7 @@ public class JQueryUI extends HtmlBlock {
             + " sessionStorage.setItem( oSettings.sTableId, JSON.stringify(oData) ); }, " +
             "\"fnStateLoad\": function (oSettings) { " +
             "return JSON.parse( sessionStorage.getItem(oSettings.sTableId) );}, ";
-
+    String dtJS = "appsTableData = [];";
     for (String id : split($(DATATABLES_ID))) {
       if (Html.isValidId(id)) {
         String init = $(initID(DATATABLES, id));
@@ -238,11 +241,10 @@ public class JQueryUI extends HtmlBlock {
         // for inserting stateSaveInit
         int pos = init.indexOf('{') + 1;
         init = new StringBuffer(init).insert(pos, stateSaveInit).toString();
-        list.add(join(id, "DataTable =  DataTableHelper('#", id,"', ", init,
-                ");"));
+        dtJS = dtJS + "\n" + join("opts = ", init, ";\nelId = \"#", id, "\";");
         String postInit = $(postInitID(DATATABLES, id));
         if(!postInit.isEmpty()) {
-          list.add(postInit);
+          dtJS = dtJS + "\n" + postInit;
         }
       }
     }
@@ -254,10 +256,12 @@ public class JQueryUI extends HtmlBlock {
       }
       int pos = init.indexOf('{') + 1;
       init = new StringBuffer(init).insert(pos, stateSaveInit).toString();
-      list.add(join("  new DataTable('", escapeEcmaScript(selector), "', ", init,
-              ").fnSetFilteringDelay(288);"));
+      dtJS = dtJS + "\n" + join("  DataTableHelper('", escapeEcmaScript(selector), "', ", init,
+              ");");
 
     }
+
+    return dtJS;
   }
 
 //  protected void initDialogs(List<String> list) {
