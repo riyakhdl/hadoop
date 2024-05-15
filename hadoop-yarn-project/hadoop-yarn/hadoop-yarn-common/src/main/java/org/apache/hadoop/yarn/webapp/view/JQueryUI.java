@@ -73,6 +73,7 @@ public class JQueryUI extends HtmlBlock {
 //        .script(root_url("static/dt-1.11.5/js/jquery.dataTables.min.js"))
             // .script(root_url("static/datatables.min.js"))
             .script(root_url("static/yarn.dt.plugins.js"))
+            .script(root_url("static/customjs/Accordion.js"))
             .script(root_url("static/customjs/DataTable.js"))
             // .script(root_url("static/dt-sorting/natural.js"))
             .script(root_url("static/customjs/UtilsUI.js"))
@@ -124,7 +125,7 @@ public class JQueryUI extends HtmlBlock {
           init = "{autoHeight: false}";
         }
 //        list.add(join("  $('#", id, "').accordion(", init, ");"));
-        String acc = "accordionJS('" + "accordion-parent" + "');";
+        String acc = "accordionJS('" + id + "', 'accordion-parent');";
         list.add(acc);
       }
     }

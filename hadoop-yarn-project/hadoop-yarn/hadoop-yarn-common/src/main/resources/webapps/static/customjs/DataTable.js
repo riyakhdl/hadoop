@@ -51,8 +51,8 @@
 
         // Customise the display text
         labels: {
-            placeholder: "Search...", // The search input placeholder
-            perPage: "{select} entries per page", // per-page dropdown label
+            placeholder: "Search:", // The search input placeholder
+            perPage: "Show {select} entries", // per-page dropdown label
             noRows: "No entries found", // Message shown when there are no search results
             info: "Showing {start} to {end} of {rows} entries" //
         },
@@ -1199,13 +1199,12 @@
 
         // Build
         that.wrapper = createElement("div", {
-            class: "dataTable-wrapper dataTable-loading"
+            class: "dataTables_wrapper no-footer",
+            id: "apps_wrapper"
         });
 
         // Template for custom layouts
-        template += "<div class='dataTable-top'>";
         template += o.layout.top;
-        template += "</div>";
         template += "<div class='dataTable-container'></div>";
         template += "<div class='dataTable-bottom'>";
         template += o.layout.bottom;
@@ -1216,7 +1215,7 @@
 
         // Per Page Select
         if (o.perPageSelect) {
-            var wrap = "<div class='dataTable-dropdown'><label>";
+            var wrap = "<div class='dataTables_length' id='apps_length'><label>";
             wrap += o.labels.perPage;
             wrap += "</label></div>";
 
@@ -1244,9 +1243,8 @@
         // Searchable
         if (o.searchable) {
             var form =
-                "<div class='dataTable-search'><input class='dataTable-input' placeholder='" +
-                o.labels.placeholder +
-                "' type='text'></div>";
+                "<div id='apps_filter' class='dataTables_filter'>\n<label>" + o.labels.placeholder +
+                    "<input type='search' class placeholder aria-controls='apps'></label></div>";
 
             // Search input placement
             template = template.replace("{search}", form);
