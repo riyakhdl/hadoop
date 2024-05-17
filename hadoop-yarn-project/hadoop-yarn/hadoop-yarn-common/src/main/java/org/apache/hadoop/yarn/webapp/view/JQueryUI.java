@@ -232,13 +232,14 @@ public class JQueryUI extends HtmlBlock {
             + " sessionStorage.setItem( oSettings.sTableId, JSON.stringify(oData) ); }, " +
             "\"fnStateLoad\": function (oSettings) { " +
             "return JSON.parse( sessionStorage.getItem(oSettings.sTableId) );}, ";
-    String dtJS = "appsTableData = [];";
+    String dtJS = "";
     for (String id : split($(DATATABLES_ID))) {
       if (Html.isValidId(id)) {
         String init = $(initID(DATATABLES, id));
         if (init.isEmpty()) {
           init = defaultInit;
         }
+        dtJS = id + "TableData = [];";
         // for inserting stateSaveInit
         int pos = init.indexOf('{') + 1;
         init = new StringBuffer(init).insert(pos, stateSaveInit).toString();
